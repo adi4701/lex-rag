@@ -1,9 +1,13 @@
 from sentence_transformers import SentenceTransformer
 
-# Load model once globally
-model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+    return _model
 
 def embed_text(text: str) -> list[float]:
-    # Normalize embeddings is critical for cosine similarity / L2 distance thresholding
-    embedding = model.encode(text, normalize_embeddings=True).tolist()
+    embedding = get_model().encode(text, normalize_embeddings=True).tolist()
     return embedding
