@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
-from backend.auth import get_current_user
-from backend.routers.query import query_pipeline
+from auth import get_current_user
+from routers.query import query_pipeline
 
 router = APIRouter()
 

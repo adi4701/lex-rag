@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, BackgroundTasks, HTTPException
-from backend.auth import get_current_user
-from backend.database import supabase, chroma_collection
-from backend.services.parser import extract_text
-from backend.services.chunker import get_text_chunks
-from backend.services.embeddings import embed_text
+from auth import get_current_user
+from database import supabase, chroma_collection
+from services.parser import extract_text
+from services.chunker import get_text_chunks
+from services.embeddings import embed_text
 from datetime import datetime
 import hashlib
 import uuid

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.config import settings
-from backend.routers import api_query, documents
+from config import settings
+from routers import api_query, documents
 
 app = FastAPI(title="LexRAG API")
 

@@ -3,10 +3,10 @@ import time
 import re
 import groq
 from collections import deque
-from backend.config import settings
-from backend.database import chroma_collection, supabase
-from backend.cache import query_cache, get_cache_key
-from backend.services.embeddings import embed_text
+from config import settings
+from database import chroma_collection, supabase
+from cache import query_cache, get_cache_key
+from services.embeddings import embed_text
 
 SYSTEM_PROMPT = """You are LexRAG, a precise corporate legal document
 analysis assistant.

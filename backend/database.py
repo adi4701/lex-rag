@@ -1,5 +1,5 @@
 from supabase import create_client, Client
-from backend.config import settings
+from config import settings
 import chromadb
 import os
 
