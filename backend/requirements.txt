@@ -1,10 +1,11 @@
 --prefer-binary
 
+numpy<2.0
+chromadb==0.4.24
 fastapi
 uvicorn[standard]
 python-multipart
 supabase
-chromadb==0.4.24
 sentence-transformers
 groq
 langchain
