@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, BackgroundTasks, HTTPException
 from backend.auth import get_current_user
 from backend.database import supabase, chroma_collection
-from backend.services.parser import parse_pdf, parse_docx
+from backend.services.parser import extract_text
 from backend.services.chunker import get_text_chunks
 from backend.services.embeddings import embed_text
 from datetime import datetime
@@ -20,10 +20,7 @@ async def ingest_document(doc_id: str, tenant_id: str):
         file_bytes = supabase.storage.from_("legal-documents").download(doc.data["file_path"])
         
         # 3. Extract text
-        if doc.data["filename"].endswith(".pdf"):
-            pages = parse_pdf(file_bytes)
-        else:
-            pages = parse_docx(file_bytes)
+        pages = extract_text(file_bytes, doc.data["filename"])
             
         full_text = "\n".join([text for _, text in pages])
         
