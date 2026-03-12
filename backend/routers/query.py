@@ -4,7 +4,7 @@ import re
 import groq
 from collections import deque
 from config import settings
-from database import chroma_collection, supabase
+from database import get_chroma_collection, supabase
 from cache import query_cache, get_cache_key
 from services.embeddings import embed_text
 
@@ -92,7 +92,7 @@ async def query_pipeline(query: str, session_id: str, user: dict, doc_types: lis
             ]
         }
 
-    results = chroma_collection.query(
+    results = get_chroma_collection().query(
         query_embeddings=[embedding],
         n_results=5,
         where=where_clause,

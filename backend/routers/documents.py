@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, BackgroundTasks, HTTPException
 from auth import get_current_user
-from database import supabase, chroma_collection
+from database import supabase, get_chroma_collection
 from services.parser import extract_text
 from services.chunker import get_text_chunks
 from services.embeddings import embed_text
@@ -50,7 +50,7 @@ async def ingest_document(doc_id: str, tenant_id: str):
                 "filename": doc.data["filename"]
             }
             
-            chroma_collection.upsert(
+            get_chroma_collection().upsert(
                 ids=[chunk_uuid],
                 embeddings=[embedding],
                 documents=[chunk_text],
@@ -132,7 +132,7 @@ async def delete_document(doc_id: str, user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Document not found")
         
     # Delete from ChromaDB
-    chroma_collection.delete(where={"doc_id": doc_id})
+    get_chroma_collection().delete(where={"doc_id": doc_id})
     
     # Delete from Storage
     supabase.storage.from_("legal-documents").remove([doc.data["file_path"]])
