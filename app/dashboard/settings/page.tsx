@@ -8,8 +8,12 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) setUser(session.user);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) setUser(session.user);
+      } catch (err) {
+        console.error(err);
+      }
     };
     fetchUser();
   }, []);

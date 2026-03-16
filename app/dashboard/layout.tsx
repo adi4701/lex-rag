@@ -13,11 +13,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+          router.push('/auth');
+        } else {
+          setUser(session.user);
+        }
+      } catch (err) {
+        console.error("Failed to get session", err);
         router.push('/auth');
-      } else {
-        setUser(session.user);
       }
     };
     checkUser();

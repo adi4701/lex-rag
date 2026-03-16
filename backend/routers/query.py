@@ -78,7 +78,9 @@ async def query_pipeline(query: str, session_id: str, user: dict, doc_types: lis
         return
 
     # Step 2: Build embedding
-    embedding = embed_text(query)
+    import asyncio
+    loop = asyncio.get_event_loop()
+    embedding = await loop.run_in_executor(None, embed_text, query)
 
     # Step 3: ChromaDB pre-filtered search
     permitted_types = doc_types or user.get("permitted_doc_types", [])
@@ -92,12 +94,15 @@ async def query_pipeline(query: str, session_id: str, user: dict, doc_types: lis
             ]
         }
 
-    results = get_chroma_collection().query(
-        query_embeddings=[embedding],
-        n_results=5,
-        where=where_clause,
-        include=["documents", "metadatas", "distances"]
-    )
+    def run_chroma_query():
+        return get_chroma_collection().query(
+            query_embeddings=[embedding],
+            n_results=5,
+            where=where_clause,
+            include=["documents", "metadatas", "distances"]
+        )
+    
+    results = await loop.run_in_executor(None, run_chroma_query)
 
     # Step 4: Filter by similarity threshold (distance <= 0.65)
     chunks = []
@@ -132,8 +137,8 @@ async def query_pipeline(query: str, session_id: str, user: dict, doc_types: lis
     prompt = SYSTEM_PROMPT.format(context=context, chat_history=history_str)
 
     # Step 8: Stream from Groq
-    client = groq.Groq(api_key=settings.GROQ_API_KEY)
-    stream = client.chat.completions.create(
+    client = groq.AsyncGroq(api_key=settings.GROQ_API_KEY)
+    stream = await client.chat.completions.create(
         model="llama-3.1-70b-versatile",
         messages=[
             {"role": "system", "content": prompt},
@@ -145,7 +150,7 @@ async def query_pipeline(query: str, session_id: str, user: dict, doc_types: lis
     )
 
     full_response = ""
-    for chunk_delta in stream:
+    async for chunk_delta in stream:
         token = chunk_delta.choices[0].delta.content or ""
         full_response += token
         yield format_sse("token", {"content": token})
@@ -164,12 +169,12 @@ async def query_pipeline(query: str, session_id: str, user: dict, doc_types: lis
 
     # Step 11: Save to Supabase
     latency = int((time.time() - start) * 1000)
-    save_to_audit_log(
+    await loop.run_in_executor(None, lambda: save_to_audit_log(
         session_id, user, query, full_response,
         [c["metadata"]["chunk_uuid"] for c in chunks],
         [u for u in cited_uuids if u in valid_uuids],
         invalid, latency
-    )
+    ))
     update_session_memory(session_id, query, full_response)
 
     # Step 12: Done event

@@ -8,7 +8,12 @@ import { Send, FileText, Plus, AlertTriangle, ChevronRight, Search, X } from 'lu
 
 export default function ChatPage() {
   const [query, setQuery] = useState('');
-  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState(() => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return Math.random().toString(36).substring(2, 15);
+  });
   const [messages, setMessages] = useState<{role: 'user'|'assistant', content: string}[]>([]);
   const [docType, setDocType] = useState<string>('');
   const { sendQuery, isStreaming, tokens, metadata, error } = useSSEQuery();
@@ -40,12 +45,17 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!isStreaming && tokens) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages(prev => [...prev, { role: 'assistant', content: tokens }]);
     }
   }, [isStreaming, tokens]);
 
   const handleNewChat = () => {
-    setSessionId(crypto.randomUUID());
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      setSessionId(crypto.randomUUID());
+    } else {
+      setSessionId(Math.random().toString(36).substring(2, 15));
+    }
     setMessages([]);
   };
 
@@ -112,7 +122,7 @@ export default function ChatPage() {
               <div className="grid grid-cols-1 gap-3 w-full">
                 {["What are the termination clauses in the Acme NDA?", "Summarize the vesting schedule for John Doe.", "List all indemnification obligations."].map((q, i) => (
                   <button key={i} onClick={() => setQuery(q)} className="text-left px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-sm transition-colors">
-                    "{q}"
+                    &quot;{q}&quot;
                   </button>
                 ))}
               </div>

@@ -12,6 +12,7 @@ export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
     setIsClient(true);
@@ -59,12 +60,13 @@ export default function AuthPage() {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     setLoading(true);
     try {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        alert('Check your email for the confirmation link.');
+        setSuccessMsg('Check your email for the confirmation link.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -90,6 +92,12 @@ export default function AuthPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-md text-sm mb-6">
             {error}
+          </div>
+        )}
+        
+        {successMsg && (
+          <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 p-3 rounded-md text-sm mb-6">
+            {successMsg}
           </div>
         )}
 

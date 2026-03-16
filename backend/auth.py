@@ -16,12 +16,24 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
         
         user_id = user_res.user.id
-        db_user = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        db_user = supabase.table("users").select("*").eq("id", user_id).execute()
         
         if not db_user.data:
-            raise HTTPException(status_code=401, detail="User record not found")
+            # Create user on the fly
+            new_user = {
+                "id": user_id,
+                "tenant_id": user_id, # Default tenant is user's own id
+                "role": "admin",
+                "permitted_doc_types": ["NDA", "EMPLOYMENT_CONTRACT", "BOARD_RESOLUTION", "SHAREHOLDER_AGREEMENT"]
+            }
+            try:
+                supabase.table("users").insert(new_user).execute()
+                return new_user
+            except Exception as e:
+                print(f"Failed to create user record: {e}")
+                raise HTTPException(status_code=401, detail="User record not found and could not be created")
             
-        return db_user.data
+        return db_user.data[0]
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

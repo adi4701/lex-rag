@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, BackgroundTasks, HTTPException
 from auth import get_current_user
 from database import supabase, get_chroma_collection
+from config import settings
 from services.parser import extract_text
 from services.chunker import get_text_chunks
 from services.embeddings import embed_text
@@ -10,7 +11,7 @@ import uuid
 
 router = APIRouter()
 
-async def ingest_document(doc_id: str, tenant_id: str):
+def ingest_document(doc_id: str, tenant_id: str):
     if not supabase: return
     try:
         # 1. Fetch doc record
@@ -94,8 +95,14 @@ async def upload_document(
     
     file_bytes = await file.read()
     
+    if len(file_bytes) > settings.MAX_FILE_SIZE_MB * 1024 * 1024:
+        raise HTTPException(status_code=400, detail=f"File size exceeds {settings.MAX_FILE_SIZE_MB}MB limit")
+    
+    import asyncio
+    loop = asyncio.get_event_loop()
+    
     # Upload to storage
-    supabase.storage.from_("legal-documents").upload(file_path, file_bytes)
+    await loop.run_in_executor(None, lambda: supabase.storage.from_("legal-documents").upload(file_path, file_bytes))
     
     # Insert record
     doc_record = {
@@ -108,20 +115,20 @@ async def upload_document(
         "file_size_bytes": len(file_bytes),
         "status": "processing"
     }
-    supabase.table("documents").insert(doc_record).execute()
+    await loop.run_in_executor(None, lambda: supabase.table("documents").insert(doc_record).execute())
     
     background_tasks.add_task(ingest_document, doc_id, user["tenant_id"])
     
     return {"doc_id": doc_id, "status": "processing"}
 
 @router.get("/api/documents")
-async def list_documents(user: dict = Depends(get_current_user)):
+def list_documents(user: dict = Depends(get_current_user)):
     if not supabase: return []
     res = supabase.table("documents").select("*").eq("tenant_id", user["tenant_id"]).order("created_at", desc=True).execute()
     return res.data
 
 @router.delete("/api/documents/{doc_id}")
-async def delete_document(doc_id: str, user: dict = Depends(get_current_user)):
+def delete_document(doc_id: str, user: dict = Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin role required")
         
