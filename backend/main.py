@@ -21,10 +21,16 @@ async def startup_event():
     loop = asyncio.get_event_loop()
     loop.run_in_executor(None, warmup)
 
-origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
-# Ensure the Vercel deployment is always allowed
-if "https://lex-rag-v1dk-adihhs-projects.vercel.app" not in origins:
-    origins.append("https://lex-rag-v1dk-adihhs-projects.vercel.app")
+origins = [
+    "https://lex-rag-v1dk.vercel.app",
+    "https://lex-rag-v1dk-adihhs-projects.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+
+for origin in settings.CORS_ORIGINS.split(","):
+    if origin.strip() and origin.strip() not in origins:
+        origins.append(origin.strip())
 
 if "*" in origins:
     app.add_middleware(
